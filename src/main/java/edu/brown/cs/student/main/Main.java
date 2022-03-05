@@ -6,14 +6,18 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import com.google.common.collect.ImmutableMap;
 import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import freemarker.template.Configuration;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import joptsimple.OptionSpec;
+import org.json.JSONException;
+import org.json.JSONObject;
 import spark.*;
 import spark.template.freemarker.FreeMarkerEngine;
 
@@ -62,6 +66,7 @@ public final class Main {
     // TODO: create a call to Spark.post to make a POST request to a URL which
     // will handle getting matchmaking results for the input
     // It should only take in the route and a new ResultsHandler
+    Spark.post("/lab5", new ResultsHandler());
     Spark.options("/*", (request, response) -> {
       String accessControlRequestHeaders = request.headers("Access-Control-Request-Headers");
       if (accessControlRequestHeaders != null) {
@@ -111,13 +116,34 @@ public final class Main {
       // and rising
       // for generating matches
 
+      JSONObject json = null;
+
+      try {
+        // Put the request's body in JSON format
+        json = new JSONObject(req.body());
+      } catch (JSONException e) {
+        e.printStackTrace();
+      }
+
       // TODO: use the MatchMaker.makeMatches method to get matches
 
+      List<String> m = null;
+
+      try {
+        String sun = json.getString("sun");
+        String moon = json.getString("moon");
+        String rising = json.getString("rising");
+        m = MatchMaker.makeMatches(sun, moon, rising);
+      } catch (JSONException e) {
+        e.printStackTrace();
+      }
+
       // TODO: create an immutable map using the matches
+      Map<String, List<String>> immutableMap = ImmutableMap.of("data", m);
 
       // TODO: return a json of the suggestions (HINT: use GSON.toJson())
       Gson GSON = new Gson();
-      return null;
+      return GSON.toJson(immutableMap);
     }
   }
 }
